@@ -1,0 +1,195 @@
+# Function to load data from a CSV file or manual input
+load_student_data <- function() {
+  library(data.table)
+  
+  # Load data from CSV file
+  file_path <- readline(prompt = "Enter CSV file path (or press Enter for manual input): ")
+  
+  if (file_path != "") {
+    student_data <- fread(file_path)
+  } else {
+    # Manual input (example data)
+    student_data <- data.frame(
+      Student_ID = c(101, 102, 103, 104, 105),
+      Name = c("Rushikesh", "Aravind", "Ravi", "Mallikarjun", "Bheemesh"),
+      Course = c("Math", "Science", "Math", "Science", "Math"),
+      Exam1 = c(85, 78, 92, 63, 88),
+      Exam2 = c(90, 82, 89, 70, 84),
+      Exam3 = c(88, 76, 94, 65, 91)
+    )
+  }
+  
+  print("Student Data Loaded Successfully!")
+  return(student_data)
+}
+
+# ------------------- 2. Data Preprocessing -------------------
+
+# Function to clean and preprocess the data
+preprocess_data <- function(data) {
+  # Replace missing values with 0
+  data[is.na(data)] <- 0
+  
+  # Ensure scores are numeric
+  data$Exam1 <- as.numeric(data$Exam1)
+  data$Exam2 <- as.numeric(data$Exam2)
+  data$Exam3 <- as.numeric(data$Exam3)
+  
+  return(data)
+}
+
+# ------------------- 3. Result Calculations -------------------
+
+# Function to calculate total score, average, and grade
+calculate_results <- function(data) {
+  library(dplyr)
+  
+  # Add Total and Average Scores, calculate Grade
+  data <- data %>%
+    mutate(
+      Total_Score = Exam1 + Exam2 + Exam3,
+      Average_Score = round(Total_Score / 3, 2),
+      Grade = case_when(
+        Average_Score >= 90 ~ "A",
+        Average_Score >= 80 ~ "B",
+        Average_Score >= 70 ~ "C",
+        Average_Score >= 60 ~ "D",
+        TRUE ~ "F"
+      )
+    )
+  
+  return(data)
+}
+
+# ------------------- 4. Display Results -------------------
+
+# Function to display individual student results
+display_results <- function(data) {
+  print("---- Student Results ----")
+  print(data)
+}
+
+# Function to display class-level statistics
+class_statistics <- function(data) {
+  cat("\n---- Class-Level Statistics ----\n")
+  
+  avg_score <- mean(data$Average_Score)
+  max_score <- max(data$Average_Score)
+  min_score <- min(data$Average_Score)
+  
+  cat("Class Average Score:", round(avg_score, 2), "\n")
+  cat("Highest Average Score:", max_score, "\n")
+  cat("Lowest Average Score:", min_score, "\n\n")
+  
+  cat("Grade Distribution:\n")
+  print(table(data$Grade))
+}
+
+# ------------------- 5. Search and Filter -------------------
+
+# Function to search for a student by ID or Name
+search_student <- function(data) {
+  library(dplyr)
+  
+  search_term <- readline(prompt = "Enter Student ID or Name to search: ")
+  
+  # Convert search term to numeric if possible
+  if (!is.na(as.numeric(search_term))) {
+    search_term <- as.numeric(search_term)
+  }
+  
+  result <- data %>%
+    filter(Student_ID == search_term | Name == search_term)
+  
+  if (nrow(result) > 0) {
+    print(result)
+  } else {
+    print("Student not found!")
+  }
+}
+
+# ------------------- 6. Data Visualization -------------------
+
+# Function to plot grade distribution
+plot_grade_distribution <- function(data) {
+  library(ggplot2)
+  
+  p <- ggplot(data, aes(x = Grade, fill = Grade)) +
+    geom_bar() +
+    ggtitle("Grade Distribution") +
+    xlab("Grades") +
+    ylab("Count") +
+    theme_minimal()
+  print(p)
+}
+
+# Function to plot score distribution
+plot_score_distribution <- function(data) {
+  library(ggplot2)
+  
+  p <- ggplot(data, aes(x = Average_Score)) +
+    geom_histogram(bins = 10, fill = "orange", color = "black") +
+    ggtitle("Score Distribution") +
+    xlab("Average Score") +
+    ylab("Count") +
+    theme_minimal()
+  print(p)
+}
+
+# ------------------- 7. Export Results -------------------
+
+# Function to export results to a CSV file
+export_results <- function(data) {
+  file_path <- readline(prompt = "Enter file name to save results (default: 'student_results.csv'): ")
+  file_path <- ifelse(file_path == "", "student_results.csv", file_path)
+  
+  write.csv(data, file_path, row.names = FALSE)
+  print(paste("Results exported successfully to", file_path, "!"))
+}
+
+# ------------------- 8. Main Program -------------------
+
+# Main function to run the system
+main <- function() {
+  # Load required libraries
+  library(dplyr)
+  library(ggplot2)
+  library(data.table)
+  
+  # Step 1: Load Data
+  student_data <- load_student_data()
+  
+  # Step 2: Preprocess Data
+  student_data <- preprocess_data(student_data)
+  
+  # Step 3: Calculate Results
+  student_data <- calculate_results(student_data)
+  
+  # Step 4: Display Results
+  display_results(student_data)
+  
+  # Step 5: Class-Level Statistics
+  class_statistics(student_data)
+  
+  # Step 6: Search and Filter
+  search_choice <- readline(prompt = "Do you want to search for a student? (yes/no): ")
+  if (tolower(search_choice) == "yes") {
+    search_student(student_data)
+  }
+  
+  # Step 7: Visualizations
+  cat("\nGenerating Visualizations...\n")
+  plot_grade_distribution(student_data)
+  plot_score_distribution(student_data)
+  
+  # Step 8: Export Results
+  export_choice <- readline(prompt = "Do you want to export results? (yes/no): ")
+  if (tolower(export_choice) == "yes") {
+    export_results(student_data)
+  }
+  
+  cat("\nStudent Result Management System Execution Complete!\n")
+}
+
+# Run the main program
+main()
